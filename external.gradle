@@ -1,0 +1,67 @@
+project.group = 'com.toto'
+project.version = 'trunk-20180611'
+ext.gradleVersion = '3.2.1'
+
+//为增加模块版本号，全部覆盖build文件中的定义，不支持分散定义后合并的方式。
+subprojects {
+	version = '1.0.0'
+    configurations {
+        // compile-time plugin libraries
+        pluginLibsCompile
+        // runtime plugin libraries
+        pluginLibsRuntime
+        //compile-only libraries
+        pluginLibsCompileOnly
+    }
+}
+
+task war {
+	
+
+}
+
+def buildAttributes = [ 'Built-By': "gradle $gradleVersion",
+	    'Built-date': new Date().format('yyyy-MM-dd HH:mm:ss'),
+	    'Implementation-Title': project.name,
+	    'Implementation-Version': project.version
+]
+
+task sourceJar(type:Jar, dependsOn: classes, description: '源代码打包生成JAR.') {
+	classifier 'sources'
+	from sourceSets.main.java
+	from sourceSets.main.resources.each {//resources里重复包含了.java文件
+			it.listFiles.each {
+			    if (it.name.endWith('.java')) { exclude "${it.name}" }
+			}
+	     }
+
+	archiveName = project.name + "-${project.version}-sources.jar"
+	destinationDir file("$buildDir/libs")
+	manifest {
+		attributes buildAttributes
+	}
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+        	groupId project.group
+        	artifactId project.name
+        	version project.version
+        	//上传war文件
+        	//from components.web
+        	//上传jar文件
+        	from components.java
+        	
+        	//上传源码
+        	artifact sourceJar {
+                classifier 'sources'
+            }
+        }
+    }
+    repositories {
+        maven {
+            mavenLocal()
+        }
+    }
+}

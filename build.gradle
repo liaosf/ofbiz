@@ -28,7 +28,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'at.bxm.gradleplugins:gradle-svntools-plugin:latest.release'
+        classpath 'at.bxm.gradleplugins:gradle-svntools-plugin:2.2.1' //避免每次执行需要联网，原值latest.release
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.7'
         classpath 'org.asciidoctor:asciidoctorj-pdf:1.5.0-alpha.16'
     }
@@ -40,6 +40,8 @@ apply plugin: "at.bxm.svntools"
 apply plugin: 'org.asciidoctor.convert'
 
 apply from: 'common.gradle'
+//增加自定义扩展任务
+apply from: 'external.gradle'
 
 // global properties
 ext.os = System.getProperty('os.name').toLowerCase()
@@ -228,9 +230,9 @@ sourceSets {
             exclude excludedConfigFiles
             // Below are necessary for unit tests run by Gradle and integration tests
             exclude { FileTreeElement elem -> elem.getName().contains('Labels.xml') }
-            exclude { FileTreeElement elem -> elem.getName().contains('.properties') && 
-                !elem.getName().contains('start.properties') && 
-                !elem.getName().contains('load-data.properties') && 
+            exclude { FileTreeElement elem -> elem.getName().contains('.properties') &&
+                !elem.getName().contains('start.properties') &&
+                !elem.getName().contains('load-data.properties') &&
                 !elem.getName().contains('debug.properties') &&
                 !elem.getName().contains('cache.properties') &&
                 !elem.getName().contains('test.properties') &&
@@ -426,7 +428,7 @@ task createTenant(group: ofbizServer, description: 'Create a new tenant in your 
                 'db-IP': project.hasProperty('dbIp')? dbIp : '',
                 'db-User': project.hasProperty('dbUser')? dbUser : '',
                 'db-Password': project.hasProperty('dbPassword')? dbPassword : '']
-    
+
             generateFileFromTemplate(databaseTemplateFile, 'runtime/tmp',
                 filterTokens, 'tmpFilteredTenantData.xml')
         }
@@ -639,7 +641,7 @@ task createPlugin(group: ofbizPlugin, description: 'create a new plugin componen
         ['config', 'data/helpdata', 'dtd', 'documents', 'entitydef', 'lib', 'patches/test', 'patches/qa',
                 'patches/production', 'script', 'servicedef', 'src/main/java', 'src/test/java', 'testdef',
                 'widget', "webapp/${webappName}/error", "webapp/${webappName}/WEB-INF",
-                "webapp/${webappName}/WEB-INF/actions"].each { 
+                "webapp/${webappName}/WEB-INF/actions"].each {
             mkdir pluginDir+'/'+it
         }
 
@@ -664,7 +666,7 @@ task createPlugin(group: ofbizPlugin, description: 'create a new plugin componen
             [tempName:'Menus.xml', newName:"${pluginResourceName}Menus.xml", location:'widget'],
             [tempName:'Forms.xml', newName:"${pluginResourceName}Forms.xml", location:'widget']
         ].each { tmpl ->
-            generateFileFromTemplate(templateDir + '/' + tmpl.tempName, 
+            generateFileFromTemplate(templateDir + '/' + tmpl.tempName,
                 pluginDir + '/' + tmpl.location, filterTokens, tmpl.newName)
         }
 
@@ -799,7 +801,7 @@ task pullPlugin(group: ofbizPlugin, description: 'Download and install a plugin 
         // reverse the order of dependencies to install them before the plugin
         def ofbizPluginArchives = new ArrayList(configurations.ofbizPlugins.files)
         Collections.reverse(ofbizPluginArchives)
-    
+
         // Extract and install plugin and dependencies
         ofbizPluginArchives.each { pluginArchive ->
             ext.pluginId = dependencyId.tokenize(':').get(1)
@@ -827,7 +829,7 @@ task pullPluginSource(group: ofbizPlugin, description: 'Download and install a p
     }
 }
 
-task pullAllPluginsSource(group: ofbizPlugin, 
+task pullAllPluginsSource(group: ofbizPlugin,
         description: 'Download and install all plugins from source control. Warning! deletes existing plugins') {
 
     task deleteBeforePulling {
@@ -892,7 +894,7 @@ task cleanUploads(group: cleanupGroup, description: 'Remove uploaded files.') {
 }
 task cleanXtra(group: cleanupGroup, description: 'Clean extra generated files like .rej, .DS_Store, etc.') {
     doLast {
-        delete fileTree(dir: "${rootDir}", 
+        delete fileTree(dir: "${rootDir}",
             includes: ['**/.nbattrs', '**/*~','**/.#*', '**/.DS_Store', '**/*.rej', '**/*.orig'])
     }
 }
@@ -942,7 +944,8 @@ tasks.addRule('Pattern: ofbizBackground <Commands>: Execute OFBiz startup comman
 
 def createOfbizCommandTask(taskName, arguments, jvmArguments, isDebugMode) {
 
-    def ofbizJarName = buildDir.toString()+'/libs/'+project.name+'.jar'
+    // def ofbizJarName = buildDir.toString()+'/libs/'+project.name+'.jar'
+    def ofbizJarName = buildDir.toString()+'/libs/'+project.name+'-'+project.version+'.jar'  //增加版本号
 
     task(type: JavaExec, dependsOn: build, taskName) {
         jvmArgs(jvmArguments)
