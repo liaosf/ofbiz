@@ -13165,6 +13165,9 @@
         <value xml:lang="zh">轮流的关键字字典</value>
         <value xml:lang="zh-TW">輪流的關鍵字字典</value>
     </property>
+    <property key="ProductAlreadyInCompareList">
+        <value xml:lang="en">Product ${name} already exist in compare list</value>
+    </property>
     <property key="ProductAmount">
         <value xml:lang="de">Betrag</value>
         <value xml:lang="en">Amount</value>
@@ -14691,6 +14694,14 @@
         <value xml:lang="zh">没有找到分类——分类标识</value>
         <value xml:lang="zh-TW">沒有找到分類識別</value>
     </property>
+    <property key="ProductCategoryAttrAlreadyExists">
+        <value xml:lang="de">Eine Attribut mit diesem Namen existiert bereits für die Produktgruppe mit dieser ID.</value>
+        <value xml:lang="en">There already is an attribute with this name for a group with this ID.</value>
+    </property>
+    <property key="ProductCategoryAlreadyExists">
+        <value xml:lang="de">Eine Produktgruppe mit dieser ID existiert bereits.</value>
+        <value xml:lang="en">There already is a Category with this ID.</value>
+    </property>
     <property key="ProductCategoryNoVariants">
         <value xml:lang="de">Keine Produkte mit den gewünschten Eigenschaften gefunden.</value>
         <value xml:lang="en">No products which fit your requirements were found.</value>
@@ -15239,6 +15250,10 @@
         <value xml:lang="zh">条件</value>
         <value xml:lang="zh-TW">條件</value>
     </property>
+    <property key="ProductConditionXquantityOfProduct">
+        <value xml:lang="en">[Note: if you use "X quantity of Product" beware that only the "Is Greater Than" and ""Is Greater Than or Equal to" are used.]</value>
+        <value xml:lang="fr">[Note: si vous utilisez "X quantité de produit", veillez à n'utiliser que les termes "est plus grand que" et "est plus grand que ou égal à".]</value>
+    </property>
     <property key="ProductConditions">
         <value xml:lang="de">Bedingungen</value>
         <value xml:lang="en">Conditions</value>
@@ -15351,6 +15366,9 @@
         <value xml:lang="vi">Hạng mục cấu hình tìm thấy</value>
         <value xml:lang="zh">配置明细被找到了</value>
         <value xml:lang="zh-TW">配置細項被找到了</value>
+    </property>
+    <property key="ProductConfigOption">
+        <value xml:lang="en">Config Option</value>
     </property>
     <property key="ProductConfigOptionList">
         <value xml:lang="de">Konfigurationsoptionen Liste</value>
@@ -30334,6 +30352,15 @@
         <value xml:lang="zh">店铺</value>
         <value xml:lang="zh-TW">商店</value>
     </property>
+    <property key="ProductStoreEcomThemeId">
+        <value xml:lang="de">Steuert das Aussehen Ihres Online-Shops.</value>
+        <value xml:lang="en">For controlling the look and feel of the web-based store.</value>
+        <value xml:lang="fr">Thème visuel pour la boutique en ligne.</value>
+        <value xml:lang="ja">ルック＆フィールおよびWebベース店舗の設定。</value>
+        <value xml:lang="vi">Để kiểm soát cách nhìn và cảm quan và cửa hàng trực tuyến</value>
+        <value xml:lang="zh">用于控制一个网店的外观感受。</value>
+        <value xml:lang="zh-TW">用於控制一個網店的外觀感受.</value>
+    </property>        
     <property key="ProductStoresFor">
         <value xml:lang="de">Läden für</value>
         <value xml:lang="en">Stores For</value>

@@ -45,6 +45,15 @@ under the License.
 
 <#macro renderTextField name className alert value="" textSize="" maxlength="" id="" event="" action="" disabled="" clientAutocomplete="" ajaxUrl="" ajaxEnabled="" mask="" tabindex="" readonly="" placeholder="" delegatorName="default">
   <input type="text" name="${name?default("")?html}"<#t/>
+  <#if ajaxEnabled?has_content && ajaxEnabled && ajaxUrl?has_content>
+    <#local defaultMinLength = modelTheme.getAutocompleterDefaultMinLength()>
+    <#local defaultDelay = modelTheme.getAutocompleterDefaultDelay()>
+    <#local className = className + " ajaxAutoCompleter"/>
+     data-show-description="false"<#rt/>
+     data-default-minlength="${defaultMinLength!2}"<#rt/>
+     data-ajax-url="${ajaxUrl!}"<#rt/>
+     data-default-delay="${defaultDelay!300}"<#rt/>
+  </#if>
     <@renderClass className alert />
     <#if value?has_content> value="${value}"</#if><#rt/>
     <#if textSize?has_content> size="${textSize}"</#if><#rt/>
@@ -59,11 +68,6 @@ under the License.
     <#if tabindex?has_content> tabindex="${tabindex}"</#if><#rt/>
     require
   /><#t/>
-  <#if ajaxEnabled?has_content && ajaxEnabled>
-    <#local defaultMinLength = modelTheme.getAutocompleterDefaultMinLength()>
-    <#local defaultDelay = modelTheme.getAutocompleterDefaultDelay()>
-    <script type="application/javascript">ajaxAutoCompleter('${ajaxUrl!}', false, ${defaultMinLength!2}, ${defaultDelay!300});</script><#lt/>
-  </#if>
 </#macro>
 
 <#macro renderTextareaField name className alert cols="" rows="" maxlength="" id="" readonly="" value="" visualEditorEnable="" buttons="" tabindex="" language="">
@@ -94,87 +98,16 @@ under the License.
         <#if size?has_content> size="${size}"</#if><#rt/>
         <#if maxlength?has_content>  maxlength="${maxlength}"</#if>
         <#if id?has_content> id="${id}_i18n"</#if>/><#rt/>
+        <#local className = className + " date-time-picker"/>
     </#if>
     <input type="hidden" <#if tabindex?has_content> tabindex="${tabindex}"</#if> name="${name}" <#if event?has_content && action?has_content> ${event}="${action}"</#if> <@renderClass className alert /><#rt/>
       <#if title?has_content> title="${title}"</#if>
       <#if value?has_content> value="${value}"</#if>
       <#if size?has_content> size="${size}"</#if><#rt/>
       <#if maxlength?has_content>  maxlength="${maxlength}"</#if>
+      <#if mask?has_content> data-mask="${mask}"</#if><#rt/>
+      data-shortdate="${shortDateInput?string}"
       <#if id?has_content> id="${id}"</#if>/><#rt/>
-    <#if dateType!="time" >
-      <script type="application/javascript">
-        <#-- If language specific lib is found, use date / time converter else just copy the value fields -->
-        if (Date.CultureInfo != undefined) {
-          var initDate = <#if value?has_content>jQuery("#${id}").val()<#else>""</#if>;
-          if (initDate != "") {
-            var dateFormat = Date.CultureInfo.formatPatterns.shortDate<#if shortDateInput?? && !shortDateInput> + " " + Date.CultureInfo.formatPatterns.longTime</#if>;
-            <#-- The JS date parser doesn't understand the dot before ms in the date/time string. The ms here should be always 000 -->
-            if (initDate.indexOf('.') != -1) {
-              initDate = initDate.substring(0, initDate.indexOf('.'));
-            }
-            jQuery("#${id}").val(initDate);
-            var ofbizTime = "<#if shortDateInput?? && shortDateInput>yyyy-MM-dd<#else>yyyy-MM-dd HH:mm:ss</#if>";
-            var dateObj = Date.parseExact(initDate, ofbizTime);
-            var formatedObj = dateObj.toString(dateFormat);
-            jQuery("#${id}_i18n").val(formatedObj);
-          }
-
-          jQuery("#${id}").change(function() {
-            var ofbizTime = "<#if shortDateInput?? && shortDateInput>yyyy-MM-dd<#else>yyyy-MM-dd HH:mm:ss</#if>";
-            var newValue = ""
-            if (this.value != "") {
-              var dateObj = Date.parseExact(this.value, ofbizTime);
-              var dateFormat = Date.CultureInfo.formatPatterns.shortDate<#if shortDateInput?? && !shortDateInput> + " " + Date.CultureInfo.formatPatterns.longTime</#if>;
-              newValue = dateObj.toString(dateFormat);
-            }
-            jQuery("#${id}_i18n").val(newValue);
-          });
-          jQuery("#${id}_i18n").change(function() {
-            var dateFormat = Date.CultureInfo.formatPatterns.shortDate<#if shortDateInput?? && !shortDateInput> + " " + Date.CultureInfo.formatPatterns.longTime</#if>,
-            newValue = "",
-            dateObj = Date.parseExact(this.value, dateFormat),
-            ofbizTime;
-            if (this.value != "" && dateObj !== null) {
-              ofbizTime = "<#if shortDateInput?? && shortDateInput>yyyy-MM-dd<#else>yyyy-MM-dd HH:mm:ss</#if>";
-              newValue = dateObj.toString(ofbizTime);
-            }
-            else { // invalid input
-              jQuery("#${id}_i18n").val("");
-            }
-            jQuery("#${id}").val(newValue);
-          });
-        } else {
-          <#-- fallback if no language specific js date file is found -->
-          jQuery("#${id}").change(function() {
-          jQuery("#${id}_i18n").val(this.value);
-        });
-        jQuery("#${id}_i18n").change(function() {
-          jQuery("#${id}").val(this.value);
-        });
-      }
-
-      <#if shortDateInput?? && shortDateInput>
-        jQuery("#${id}").datepicker({
-      <#else>
-        jQuery("#${id}").datetimepicker({
-          showSecond: true,
-          <#-- showMillisec: true, -->
-          timeFormat: 'HH:mm:ss',
-          stepHour: 1,
-          stepMinute: 1,
-          stepSecond: 1,
-      </#if>
-          showWeek: true,
-          showOn: 'button',
-          buttonImage: '',
-          buttonText: '',
-          buttonImageOnly: false,
-          dateFormat: 'yy-mm-dd'
-        })
-        <#if mask?has_content>.mask("${mask}")</#if>
-        ;
-      </script>
-    </#if>
     <#if timeDropdown?has_content && timeDropdown=="time-dropdown">
       <select name="${timeHourName}" <#if classString?has_content>class="${classString}"</#if>><#rt/>
         <#if isTwelveHour>
@@ -469,35 +402,24 @@ under the License.
   </#if>
 </#macro>
 
-<#macro renderDateFindField className alert name dateType formName value defaultDateTimeString imgSrc localizedIconTitle defaultOptionFrom defaultOptionThru opEquals opSameDay opGreaterThanFromDayStart opGreaterThan opGreaterThan opLessThan opUpToDay opUpThruDay opIsEmpty conditionGroup="" localizedInputTitle="" value2="" size="" maxlength="" titleStyle="" tabindex="">
+<#macro renderDateFindField className alert id name dateType formName value defaultDateTimeString imgSrc localizedIconTitle defaultOptionFrom defaultOptionThru opEquals opSameDay opGreaterThanFromDayStart opGreaterThan opGreaterThan opLessThan opUpToDay opUpThruDay opIsEmpty conditionGroup="" localizedInputTitle="" value2="" size="" maxlength="" titleStyle="" tabindex="">
   <#if conditionGroup?has_content>
     <input type="hidden" name="${name}_grp" value="${conditionGroup}"/>
   </#if>
+  <#if dateType != "time">
+    <#local className = className + " date-time-picker"/>
+  </#if>
+  <#local shortDateInput = "date" == dateType/>
   <span class="view-calendar">
-    <input id="${name?html}_fld0_value" type="text" <@renderClass className alert /><#if name?has_content> name="${name?html}_fld0_value"</#if><#if localizedInputTitle?has_content> title="${localizedInputTitle}"</#if><#if value?has_content> value="${value}"</#if><#if size?has_content> size="${size}"</#if><#if maxlength?has_content> maxlength="${maxlength}"</#if>/><#if tabindex?has_content> tabindex="${tabindex}"</#if><#rt/>
-    <#if dateType != "time">
-      <script type="application/javascript">
-        <#if "date" == dateType>
-          jQuery("#${name?html}_fld0_value").datepicker({
-        <#else>
-          jQuery("#${name?html}_fld0_value").datetimepicker({
-            showSecond: true,
-            <#-- showMillisec: true, -->
-            timeFormat: 'HH:mm:ss',
-            stepHour: 1,
-            stepMinute: 5,
-            stepSecond: 10,
-        </#if>
-            showWeek: true,
-            showOn: 'button',
-            buttonImage: '',
-            buttonText: '',
-            buttonImageOnly: false,
-            dateFormat: 'yy-mm-dd'
-          });
-      </script>
-      <#rt/>
-    </#if>
+    <input id="${id}_fld0_value" type="text" <@renderClass className alert />
+        <#if name?has_content> name="${name?html}_fld0_value"</#if>
+        <#if localizedInputTitle?has_content> title="${localizedInputTitle}"</#if>
+        <#if value?has_content> value="${value}"</#if>
+        <#if size?has_content> size="${size}"</#if>
+        <#if maxlength?has_content> maxlength="${maxlength}"</#if>
+        <#if tabindex?has_content> tabindex="${tabindex}"</#if><#rt/>
+         data-shortdate="${shortDateInput?string}"
+    />
     <#if titleStyle?has_content>
       <span class="${titleStyle}"><#rt/>
     </#if>
@@ -511,30 +433,14 @@ under the License.
       </span><#rt/>
     </#if>
     <#rt/>
-    <input id="${name?html}_fld1_value" type="text" <@renderClass className alert /><#if name?has_content> name="${name}_fld1_value"</#if><#if localizedInputTitle??> title="${localizedInputTitle?html}"</#if><#if value2?has_content> value="${value2}"</#if><#if size?has_content> size="${size}"</#if><#if maxlength?has_content> maxlength="${maxlength}"</#if>/><#rt/>
-    <#if dateType != "time">
-      <script type="application/javascript">
-        <#if "date" == dateType>
-          jQuery("#${name?html}_fld1_value").datepicker({
-        <#else>
-          jQuery("#${name?html}_fld1_value").datetimepicker({
-            showSecond: true,
-            <#-- showMillisec: true, -->
-            timeFormat: 'HH:mm:ss',
-            stepHour: 1,
-            stepMinute: 5,
-            stepSecond: 10,
-        </#if>
-            showWeek: true,
-            showOn: 'button',
-            buttonImage: '',
-            buttonText: '',
-            buttonImageOnly: false,
-            dateFormat: 'yy-mm-dd'
-          });
-      </script>
-      <#rt/>
-    </#if>
+    <input id="${id}_fld1_value" type="text" <@renderClass className alert />
+        <#if name?has_content> name="${name}_fld1_value"</#if>
+        <#if localizedInputTitle??> title="${localizedInputTitle?html}"</#if>
+        <#if value2?has_content> value="${value2}"</#if>
+        <#if size?has_content> size="${size}"</#if>
+        <#if maxlength?has_content> maxlength="${maxlength}"</#if>
+         data-shortdate="${shortDateInput?string}"
+    /><#rt/>
     <#if titleStyle?has_content>
       <span class="${titleStyle}"><#rt/>
     </#if>
@@ -747,11 +653,8 @@ Parameter: delegatorName, String, optional - name of the delegator in context.
     <div class="fieldgroup-title-bar">
       <#if collapsible>
         <ul>
-          <li class="<#if collapsed>collapsed">
-                      <a onclick="javascript:toggleCollapsiblePanel(this, '${collapsibleAreaId}', '${expandToolTip}', '${collapseToolTip}');">
-                    <#else>expanded">
-                      <a onclick="javascript:toggleCollapsiblePanel(this, '${collapsibleAreaId}', '${expandToolTip}', '${collapseToolTip}');">
-                    </#if>
+          <li data-collapsible-area-id="${collapsibleAreaId}" data-expand-tooltip="${expandToolTip}" data-collapse-tooltip="${collapseToolTip}"
+                  class="<#if collapsed>collapsed"><#else>expanded"></#if>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<#if title?has_content>${title}</#if></a>
           </li>
         </ul>

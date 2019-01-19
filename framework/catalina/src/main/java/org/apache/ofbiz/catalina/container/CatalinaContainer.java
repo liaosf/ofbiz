@@ -482,12 +482,10 @@ public class CatalinaContainer implements Container {
         Debug.logInfo("Creating context [" + appInfo.name + "]", module);
         Host host = prepareHost(tomcat, appInfo.getVirtualHosts());
 
-        return new Callable<Context>() {
-            public Context call() throws ContainerException, LifecycleException {
-                StandardContext context = prepareContext(host, configuration, appInfo, clusterProp);
-                host.addChild(context);
-                return context;
-            }
+        return () -> {
+            StandardContext context = prepareContext(host, configuration, appInfo, clusterProp);
+            host.addChild(context);
+            return context;
         };
     }
 
@@ -502,12 +500,13 @@ public class CatalinaContainer implements Container {
 
         context.setParent(host);
         context.setDocBase(location);
+        context.setName(appInfo.name);
+        context.setDisplayName(appInfo.name);
         context.setPath(getWebappMountPoint(appInfo));
         context.addLifecycleListener(new ContextConfig());
         context.setJ2EEApplication("OFBiz");
         context.setJ2EEServer("OFBiz Container");
         context.setLoader(new WebappLoader(Thread.currentThread().getContextClassLoader()));
-        context.setDisplayName(appInfo.name);
         context.setDocBase(location);
         context.setReloadable(ContainerConfig.getPropertyValue(configuration, "apps-context-reloadable", false));
         context.setDistributable(contextIsDistributable);

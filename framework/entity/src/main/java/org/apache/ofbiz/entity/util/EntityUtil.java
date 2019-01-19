@@ -251,13 +251,8 @@ public final class EntityUtil {
     public static boolean isValueActive(GenericValue datedValue, java.sql.Timestamp moment, String fromDateName, String thruDateName) {
         java.sql.Timestamp fromDate = datedValue.getTimestamp(fromDateName);
         java.sql.Timestamp thruDate = datedValue.getTimestamp(thruDateName);
-
-        if ((thruDate == null || thruDate.after(moment)) && (fromDate == null || fromDate.before(moment) || fromDate.equals(moment))) {
-            return true;
-        } else {
-            // else not active at moment
-            return false;
-        }
+        return (thruDate == null || thruDate.after(moment)) &&
+                (fromDate == null || fromDate.before(moment) || fromDate.equals(moment));
     }
 
     /**
@@ -323,7 +318,7 @@ public final class EntityUtil {
         //force check entity label before order by
         List<T> localizedValues = new ArrayList<T>();
         for (T value : values) {
-            T newValue = (T) value.clone();
+            T newValue = UtilGenerics.cast(value.clone());
             for (String orderByField : orderBy) {
                 if (orderByField.endsWith(" DESC")) {
                     orderByField= orderByField.substring(0, orderByField.length() - 5);
@@ -517,10 +512,7 @@ public final class EntityUtil {
      * @see EntityUtil#getPagedList
      */
     public static int getStartIndexFromViewIndex(int viewIndex, int viewSize) {
-        if (viewIndex == 0) {
-            return 1;
-        }
-        return (viewIndex * viewSize) + 1;
+        return viewIndex == 0 ? 1 : (viewIndex * viewSize) + 1;
     }
 
     /**

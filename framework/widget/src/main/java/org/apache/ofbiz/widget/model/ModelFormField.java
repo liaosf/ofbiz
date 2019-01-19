@@ -75,6 +75,7 @@ import org.apache.ofbiz.widget.renderer.FormRenderer;
 import org.apache.ofbiz.widget.renderer.FormStringRenderer;
 import org.apache.ofbiz.widget.renderer.MenuStringRenderer;
 import org.apache.ofbiz.widget.renderer.ScreenRenderer;
+import org.apache.ofbiz.widget.renderer.VisualTheme;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.w3c.dom.Element;
 
@@ -226,6 +227,13 @@ public class ModelFormField {
         return this.name;
     }
 
+
+    /**
+     * Gets the current id name of the {@link ModelFormField} and if in
+     * a multi type {@link ModelForm}, suffixes it with the index row.
+     * @param context
+     * @return
+     */
     public String getCurrentContainerId(Map<String, Object> context) {
         ModelForm modelForm = this.getModelForm();
         String idName = FlexibleStringExpander.expandString(this.getIdName(), context);
@@ -435,6 +443,14 @@ public class ModelFormField {
         return headerLinkStyle;
     }
 
+    /**
+     * Gets the id name of the {@link ModelFormField} that is :
+     * <ul>
+     *     <li>The id-name" specified on the field definition
+     *     <li>Else the concatenation of the formName and fieldName
+     * </ul>
+     * @return
+     */
     public String getIdName() {
         if (UtilValidate.isNotEmpty(idName)) {
             return idName;
@@ -1567,7 +1583,7 @@ public class ModelFormField {
                 }
 
                 try {
-                    BigDecimal parsedRetVal = (BigDecimal) ObjectType.simpleTypeConvert(retVal, "BigDecimal", null, null, locale,
+                    BigDecimal parsedRetVal = (BigDecimal) ObjectType.simpleTypeOrObjectConvert(retVal, "BigDecimal", null, null, locale,
                             true);
                     retVal = UtilFormatOut.formatCurrency(parsedRetVal, isoCode, locale, 10); // we set the max to 10 digits as an hack to not round numbers in the ui
                 } catch (GeneralException e) {
@@ -1575,7 +1591,7 @@ public class ModelFormField {
                     Debug.logError(e, errMsg, module);
                     throw new IllegalArgumentException(errMsg);
                 }
-            } else if ("date".equals(this.type) && retVal.length() > 10) {
+            } else if ("date".equals(this.type) && retVal.length() > 9) {
                 Locale locale = (Locale) context.get("locale");
                 if (locale == null) {
                     locale = Locale.getDefault();
@@ -1626,7 +1642,7 @@ public class ModelFormField {
                     locale = Locale.getDefault();
                 }
                 try {
-                    Double parsedRetVal = (Double) ObjectType.simpleTypeConvert(retVal, "Double", null, locale, false);
+                    Double parsedRetVal = (Double) ObjectType.simpleTypeOrObjectConvert(retVal, "Double", null, locale, false);
                     String template = UtilProperties.getPropertyValue("arithmetic", "accounting-number.format",
                             "#,##0.00;(#,##0.00)");
                     retVal = UtilFormatOut.formatDecimalNumber(parsedRetVal, template, locale);
@@ -3036,7 +3052,7 @@ public class ModelFormField {
                         key = (String) keyObj;
                     } else {
                         try {
-                            key = (String) ObjectType.simpleTypeConvert(keyObj, "String", null, null);
+                            key = (String) ObjectType.simpleTypeOrObjectConvert(keyObj, "String", null, null);
                         } catch (GeneralException e) {
                             String errMsg = "Could not convert field value for the field: [" + this.keyAcsr.toString()
                                     + "] to String for the value [" + keyObj + "]: " + e.toString();
@@ -3267,7 +3283,7 @@ public class ModelFormField {
             String location = this.getMenuLocation(context);
             ModelMenu modelMenu = null;
             try {
-                modelMenu = MenuFactory.getMenuFromLocation(location, name);
+                modelMenu = MenuFactory.getMenuFromLocation(location, name, (VisualTheme) context.get("visualTheme"));
             } catch (Exception e) {
                 String errMsg = "Error rendering menu named [" + name + "] at location [" + location + "]: ";
                 Debug.logError(e, errMsg, module);

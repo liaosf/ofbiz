@@ -472,6 +472,7 @@ under the License.
                     request-redirect,
                     request-redirect-noparam,
                     url,
+                    url-redirect,
                     cross-redirect
                 </xs:documentation>
             </xs:annotation>
@@ -552,10 +553,17 @@ under the License.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:enumeration>
-                    <xs:enumeration value="cross-redirect">
+                    <xs:enumeration value="url-redirect">
                         <xs:annotation>
                             <xs:documentation>
                                 Works like URL but you can also pass redirected parameters.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="cross-redirect">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Works like request-redirect for cross applications calls.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:enumeration>

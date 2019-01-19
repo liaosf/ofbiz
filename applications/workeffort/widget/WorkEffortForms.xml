@@ -290,6 +290,7 @@ under the License.
              the form it is extending (results in two workEffortId fields in the form)
         <field name="workEffortId"><hidden value=""/></field>
         -->
+        <alt-target use-when="workEffort==null" target="createWorkEffortAndAssoc"/>
         <field name="workEffortIdFrom"><display-entity entity-name="WorkEffort" key-field-name="workEffortId" description="${workEffortName} [${workEffortId}]"/></field>
         <field name="workEffortIdTo"><lookup target-form-name="LookupWorkEffort"/></field>
         <field name="workEffortAssocTypeId">
@@ -1242,7 +1243,7 @@ under the License.
         </actions>
         <field name="agreementId">
             <display-entity entity-name="Agreement" key-field-name="agreementId"  also-hidden="true">
-                <sub-hyperlink target="/accounting/control/FindAgreement" description="${agreementId}" link-style="buttontext" target-type="inter-app">
+                <sub-hyperlink target="/accounting/control/EditAgreement" description="${agreementId}" link-style="buttontext" target-type="inter-app">
                     <parameter param-name="agreementId"/>
                 </sub-hyperlink>
             </display-entity>

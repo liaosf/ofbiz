@@ -216,6 +216,8 @@ public final class ComponentConfig {
                         } else {
                             tm.put(key, wInfo);
                         }
+                    } if (!wInfo.getAppBarDisplay() && UtilValidate.isEmpty(menuName)) {
+                        tm.put(key, wInfo);
                     }
                 }
             }
@@ -854,7 +856,7 @@ public final class ComponentConfig {
         // CatalinaContainer modifies this field.
         private volatile boolean appBarDisplay;
         private final String accessPermission;
-        private final boolean keepAutologinCookie;
+        private final boolean useAutologinCookie;
 
         private WebappInfo(ComponentConfig componentConfig, Element element) {
             this.componentConfig = componentConfig;
@@ -894,7 +896,7 @@ public final class ComponentConfig {
             this.appBarDisplay = !"false".equals(element.getAttribute("app-bar-display"));
             this.privileged = !"false".equals(element.getAttribute("privileged"));
             this.accessPermission = element.getAttribute("access-permission");
-            this.keepAutologinCookie = !"false".equals(element.getAttribute("keep-autologin-cookie"));
+            this.useAutologinCookie = !"false".equals(element.getAttribute("use-autologin-cookie"));
             String basePermStr = element.getAttribute("base-permission");
             if (!basePermStr.isEmpty()) {
                 this.basePermission = basePermStr.split(",");
@@ -984,8 +986,8 @@ public final class ComponentConfig {
             return virtualHosts;
         }
 
-        public boolean getKeepAutologinCookie() {
-            return keepAutologinCookie;
+        public boolean isAutologinCookieUsed() {
+            return useAutologinCookie;
         }
 
         public synchronized void setAppBarDisplay(boolean appBarDisplay) {

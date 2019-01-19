@@ -195,23 +195,9 @@ public abstract class EntityFunction<T extends Comparable<?>> extends EntityCond
         if (nested != null) {
             nested.addSqlValue(sql, tableAliases, modelEntity, entityConditionParams, includeTableNamePrefix, datasourceinfo);
         } else {
-            addValue(sql, null, value, entityConditionParams);
+            EntityConditionUtils.addValue(sql, null, value, entityConditionParams);
         }
         sql.append(')');
-    }
-
-    @Override
-    public void visit(EntityConditionVisitor visitor) {
-        if (nested != null) {
-            visitor.acceptEntityConditionValue(nested);
-        } else {
-            visitor.acceptObject(value);
-        }
-    }
-
-    @Override
-    public void accept(EntityConditionVisitor visitor) {
-        visitor.acceptEntityFunction(this);
     }
 
     @Override

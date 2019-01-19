@@ -383,11 +383,7 @@ public final class UtilValidate {
 
         try {
             long temp = Long.parseLong(s);
-
-            if (temp > 0) {
-                return true;
-            }
-            return false;
+            return temp > 0;
         } catch (Exception e) {
             return false;
         }
@@ -403,11 +399,7 @@ public final class UtilValidate {
 
         try {
             int temp = Integer.parseInt(s);
-
-            if (temp >= 0) {
-                return true;
-            }
-            return false;
+            return temp >= 0;
         } catch (Exception e) {
             return false;
         }
@@ -423,11 +415,7 @@ public final class UtilValidate {
 
         try {
             int temp = Integer.parseInt(s);
-
-            if (temp < 0) {
-                return true;
-            }
-            return false;
+            return temp < 0;
         } catch (Exception e) {
             return false;
         }
@@ -443,11 +431,7 @@ public final class UtilValidate {
 
         try {
             int temp = Integer.parseInt(s);
-
-            if (temp <= 0) {
-                return true;
-            }
-            return false;
+            return temp <= 0;
         } catch (Exception e) {
             return false;
         }
@@ -504,28 +488,16 @@ public final class UtilValidate {
 
         try {
             float temp = Float.parseFloat(s);
-            if (!allowNegative && temp < 0) {
-                return false;
-            }
-            if (!allowPositive && temp > 0) {
+            if ((!allowNegative && temp < 0) || (!allowPositive && temp > 0)) {
                 return false;
             }
             int decimalPoint = s.indexOf(".");
             if (decimalPoint == -1) {
-                if (minDecimal > 0) {
-                    return false;
-                }
-                return true;
+                return !(minDecimal > 0);
             }
             // 1.2345; length=6; point=1; num=4
             int numDecimals = s.length() - decimalPoint - 1;
-            if (minDecimal >= 0 && numDecimals < minDecimal) {
-                return false;
-            }
-            if (maxDecimal >= 0 && numDecimals > maxDecimal) {
-                return false;
-            }
-            return true;
+            return !(minDecimal >= 0 && numDecimals < minDecimal) && !(maxDecimal >= 0 && numDecimals > maxDecimal);
         } catch (Exception e) {
             return false;
         }
@@ -540,28 +512,16 @@ public final class UtilValidate {
 
         try {
             double temp = Double.parseDouble(s);
-            if (!allowNegative && temp < 0) {
-                return false;
-            }
-            if (!allowPositive && temp > 0) {
+            if ((!allowNegative && temp < 0) || (!allowPositive && temp > 0)) {
                 return false;
             }
             int decimalPoint = s.indexOf(".");
             if (decimalPoint == -1) {
-                if (minDecimal > 0) {
-                    return false;
-                }
-                return true;
+                return !(minDecimal > 0);
             }
             // 1.2345; length=6; point=1; num=4
             int numDecimals = s.length() - decimalPoint - 1;
-            if (minDecimal >= 0 && numDecimals < minDecimal) {
-                return false;
-            }
-            if (maxDecimal >= 0 && numDecimals > maxDecimal) {
-                return false;
-            }
-            return true;
+            return !(minDecimal >= 0 && numDecimals < minDecimal) && !(maxDecimal >= 0 && numDecimals > maxDecimal);
         } catch (Exception e) {
             return false;
         }
@@ -671,61 +631,6 @@ public final class UtilValidate {
         return (isInteger(normalizedSSN) && normalizedSSN.length() == digitsInSocialSecurityNumber);
     }
 
-    /** isUSPhoneNumber returns true if string s is a valid U.S. Phone Number.  Must be 10 digits.
-     * @deprecated Use {@link #isValidPhoneNumber(String,Delegator)} instead
-     **/
-    @Deprecated
-    public static boolean isUSPhoneNumber(String s) {
-        if (isEmpty(s)) {
-            return defaultEmptyOK;
-        }
-        String normalizedPhone = stripCharsInBag(s, phoneNumberDelimiters);
-
-        return (isInteger(normalizedPhone) && normalizedPhone.length() == digitsInUSPhoneNumber);
-    }
-
-    /** isUSPhoneAreaCode returns true if string s is a valid U.S. Phone Area Code.  Must be 3 digits.
-     * @deprecated Use {@link #isValidPhoneNumber(String,Delegator)} instead
-     * */
-    @Deprecated
-    public static boolean isUSPhoneAreaCode(String s) {
-        if (isEmpty(s)) {
-            return defaultEmptyOK;
-        }
-        String normalizedPhone = stripCharsInBag(s, phoneNumberDelimiters);
-
-        return (isInteger(normalizedPhone) && normalizedPhone.length() == digitsInUSPhoneAreaCode);
-    }
-
-    /** isUSPhoneMainNumber returns true if string s is a valid U.S. Phone Main Number.  Must be 7 digits.
-     * @deprecated Use {@link #isValidPhoneNumber(String,Delegator)} instead
-     * */
-    @Deprecated
-    public static boolean isUSPhoneMainNumber(String s) {
-        if (isEmpty(s)) {
-            return defaultEmptyOK;
-        }
-        String normalizedPhone = stripCharsInBag(s, phoneNumberDelimiters);
-
-        return (isInteger(normalizedPhone) && normalizedPhone.length() == digitsInUSPhoneMainNumber);
-    }
-
-    /** isInternationalPhoneNumber returns true if string s is a valid
-     *  international phone number.  Must be digits only; any length OK.
-     *  May be prefixed by + character.
-     *  @deprecated Use {@link #isValidPhoneNumber(String,Delegator)} instead
-     */
-    @Deprecated
-    public static boolean isInternationalPhoneNumber(String s) {
-        if (isEmpty(s)) {
-            return defaultEmptyOK;
-        }
-
-        String normalizedPhone = stripCharsInBag(s, phoneNumberDelimiters);
-
-        return isPositiveInteger(normalizedPhone);
-    }
-
     /** isZIPCode returns true if string s is a valid U.S. ZIP code.  Must be 5 or 9 digits only. */
     public static boolean isZipCode(String s) {
         if (isEmpty(s)) {
@@ -803,10 +708,7 @@ public final class UtilValidate {
         if (isEmpty(s)) {
             return defaultEmptyOK;
         }
-        if (s.indexOf("://") != -1) {
-            return true;
-        }
-        return false;
+        return s.indexOf("://") != -1;
     }
 
     /** isYear returns true if string s is a valid
@@ -819,11 +721,7 @@ public final class UtilValidate {
         if (isEmpty(s)) {
             return defaultEmptyOK;
         }
-
-        if (!isNonnegativeInteger(s)) {
-            return false;
-        }
-        return ((s.length() == 2) || (s.length() == 4));
+        return isNonnegativeInteger(s) && ((s.length() == 2) || (s.length() == 4));
     }
 
     /** isIntegerInRange returns true if string s is an integer
@@ -905,14 +803,8 @@ public final class UtilValidate {
         int intMonth = Integer.parseInt(month);
         int intDay = Integer.parseInt(day);
 
-        // catch invalid days, except for February
-        if (intDay > daysInMonth[intMonth - 1]) {
-            return false;
-        }
-        if ((intMonth == 2) && (intDay > daysInFebruary(intYear))) {
-            return false;
-        }
-        return true;
+        // catch invalid days, except for February, so intDay > daysInMonth[intMonth - 1]
+        return !(intDay > daysInMonth[intMonth - 1]) && !((intMonth == 2) && (intDay > daysInFebruary(intYear)));
     }
 
     /** isDate returns true if string argument date forms a valid date. */
@@ -1054,10 +946,7 @@ public final class UtilValidate {
     /** isTime returns true if string arguments hour, minute, and second form a valid time. */
     public static boolean isTime(String hour, String minute, String second) {
         // catch invalid years(not 2- or 4-digit) and invalid months and days.
-        if (isHour(hour) && isMinute(minute) && isSecond(second)) {
-            return true;
-        }
-        return false;
+        return isHour(hour) && isMinute(minute) && isSecond(second);
     }
 
     /** isTime returns true if string argument time forms a valid time. */
@@ -1113,10 +1002,7 @@ public final class UtilValidate {
             return defaultEmptyOK;
         }
         String st = stripCharsInBag(stPassed, creditCardDelimiters);
-        if (st.length() == 15 && sumIsMod10(getLuhnSum(st))) {
-            return true;
-        }
-        return false;
+        return st.length() == 15 && sumIsMod10(getLuhnSum(st));
     }
 
     /** Check to see if a card number is a supported Gift Card
@@ -1125,12 +1011,7 @@ public final class UtilValidate {
      * @return true, if the number passed simple checks
      */
     public static boolean isGiftCard(String stPassed) {
-        if (isOFBGiftCard(stPassed)) {
-            return true;
-        } else if (isValueLinkCard(stPassed)) {
-            return true;
-        }
-        return false;
+        return isOFBGiftCard(stPassed) || isValueLinkCard(stPassed);
     }
 
     public static int getLuhnSum(String stPassed) {
@@ -1174,15 +1055,8 @@ public final class UtilValidate {
         }
         String st = stripCharsInBag(stPassed, creditCardDelimiters);
 
-        if (!isInteger(st)) {
-            return false;
-        }
-
-        // encoding only works on cars with less the 19 digits
-        if (st.length() > 19) {
-            return false;
-        }
-        return sumIsMod10(getLuhnSum(st));
+        // encoding only works on cars with less the 19 digits, so st.length() > 19
+        return isInteger(st) && !(st.length() > 19) && sumIsMod10(getLuhnSum(st));
     }
 
     /** Checks to see if the cc number is a valid Visa number
@@ -1358,15 +1232,8 @@ public final class UtilValidate {
         }
 
         String cc = stripCharsInBag(ccPassed, creditCardDelimiters);
-
-        if (!isCreditCard(cc)) {
-            return false;
-        }
-        if (isMasterCard(cc) || isVisa(cc) || isAmericanExpress(cc) || isDinersClub(cc) ||
-                isDiscover(cc) || isEnRoute(cc) || isJCB(cc) || isSolo(cc)|| isSwitch (cc)|| isVisaElectron(cc)) {
-            return true;
-        }
-        return false;
+        return isCreditCard(cc) && (isMasterCard(cc) || isVisa(cc) || isAmericanExpress(cc) || isDinersClub(cc) ||
+                        isDiscover(cc) || isEnRoute(cc) || isJCB(cc) || isSolo(cc)|| isSwitch (cc)|| isVisaElectron(cc));
     }
 
     /** Checks to see if the cc number is a valid number for any accepted credit card, and return the name of that type
@@ -1422,10 +1289,7 @@ public final class UtilValidate {
      *   @return  true, if the credit card number is valid for the particular credit card type given in "cardType", false otherwise
      */
     public static boolean isCardMatch(String cardType, String cardNumberPassed) {
-        if (isEmpty(cardType)) {
-            return defaultEmptyOK;
-        }
-        if (isEmpty(cardNumberPassed)) {
+        if (isEmpty(cardType) || isEmpty(cardNumberPassed)) {
             return defaultEmptyOK;
         }
         String cardNumber = stripCharsInBag(cardNumberPassed, creditCardDelimiters);

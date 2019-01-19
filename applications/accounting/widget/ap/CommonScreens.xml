@@ -53,7 +53,8 @@ under the License.
                                 <script location="component://accounting/groovyScripts/invoice/InvoiceReport.groovy"/>
                             </actions>
                             <widgets>
-                                <include-portal-page id="ApPortalPage"/>
+                                <include-screen name="ApPastDueInvoices"/>
+                                <include-screen name="ApInvoicesDueSoon"/>
                             </widgets>
                         </section>
                     </decorator-section>
@@ -151,7 +152,7 @@ under the License.
             <widgets>
                 <decorator-screen name="main-decorator" location="${parameters.mainDecoratorLocation}">
                     <decorator-section name="pre-body">
-                        <include-menu location="component://accounting/widget/ap/ApMenus.xml" name="ApInvoiceTabBar"/>
+                        <include-menu name="ApInvoiceTabBar" location="component://accounting/widget/ap/ApMenus.xml"/>
                     </decorator-section>
                     <decorator-section name="body">
                         <decorator-section-include name="body"/>

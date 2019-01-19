@@ -18,6 +18,7 @@
  *******************************************************************************/
 package org.apache.ofbiz.service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -201,17 +202,28 @@ public class ServiceDispatcher {
         }
     }
 
+    /**
+     * Registers a callback by associating it to a service.
+     *
+     * @param serviceName the name of the service to associate the callback with
+     * @param cb the callback to register
+     */
     public synchronized void registerCallback(String serviceName, GenericServiceCallback cb) {
-        List<GenericServiceCallback> callBackList = callbacks.get(serviceName);
-        if (callBackList == null) {
-            callBackList = new LinkedList<>();
-        }
-        callBackList.add(cb);
-        callbacks.put(serviceName, callBackList);
+        callbacks.computeIfAbsent(serviceName, x -> new LinkedList<>()).add(cb);
     }
 
+    /**
+     * Provides a list of the enabled callbacks corresponding to a service.
+     *
+     * As a side effect, disabled callbacks are removed.
+     *
+     * @param serviceName the name of service whose callbacks should be called
+     * @return a list of callbacks corresponding to {@code serviceName}
+     */
     public List<GenericServiceCallback> getCallbacks(String serviceName) {
-        return callbacks.get(serviceName);
+        List<GenericServiceCallback> res = callbacks.getOrDefault(serviceName, Collections.emptyList());
+        res.removeIf(gsc -> !gsc.isEnabled());
+        return res;
     }
 
     /**
@@ -301,6 +313,7 @@ public class ServiceDispatcher {
                     if (modelService.requireNewTransaction) {
                         parentTransaction = TransactionUtil.suspend();
                         if (TransactionUtil.isTransactionInPlace()) {
+                            rs.setEndStamp();
                             throw new GenericTransactionException("In service " + modelService.name + " transaction is still in place after suspend, status is " + TransactionUtil.getStatusString());
                         }
                         // now start a new transaction
@@ -358,6 +371,7 @@ public class ServiceDispatcher {
                     GenericValue userLogin = (GenericValue) context.get("userLogin");
 
                     if (modelService.auth && userLogin == null) {
+                        rs.setEndStamp();
                         throw new ServiceAuthException("User authorization is required for this service: " + modelService.name + modelService.debugInfo());
                     }
 
@@ -381,6 +395,7 @@ public class ServiceDispatcher {
                             modelService.validate(context, ModelService.IN_PARAM, locale);
                         } catch (ServiceValidationException e) {
                             Debug.logError(e, "Incoming context (in runSync : " + modelService.name + ") does not match expected requirements", module);
+                            rs.setEndStamp();
                             throw e;
                         }
                     }
@@ -489,6 +504,7 @@ public class ServiceDispatcher {
                     try {
                         modelService.validate(result, ModelService.OUT_PARAM, locale);
                     } catch (ServiceValidationException e) {
+                        rs.setEndStamp();
                         throw new GenericServiceException("Outgoing result (in runSync : " + modelService.name + ") does not match expected requirements", e);
                     }
                 }
@@ -555,6 +571,7 @@ public class ServiceDispatcher {
                         if (e.getMessage() != null) {
                             errMsg = errMsg + ": " + e.getMessage();
                         }
+                        rs.setEndStamp();
                         throw new GenericServiceException(errMsg);
                     }
                 }
@@ -567,6 +584,7 @@ public class ServiceDispatcher {
             }
         } catch (GenericTransactionException te) {
             Debug.logError(te, "Problems with the transaction", module);
+            rs.setEndStamp();
             throw new GenericServiceException("Problems with the transaction.", te.getNested());
         } finally {
             if (lock != null) {
@@ -584,6 +602,7 @@ public class ServiceDispatcher {
                     TransactionUtil.resume(parentTransaction);
                 } catch (GenericTransactionException ite) {
                     Debug.logWarning(ite, "Transaction error, not resumed", module);
+                    rs.setEndStamp();
                     throw new GenericServiceException("Resume transaction exception, see logs");
                 }
             }
@@ -938,7 +957,6 @@ public class ServiceDispatcher {
             }
             if (hasPermission) {
                 context.putAll(permResp);
-                context = origService.makeValid(context, ModelService.IN_PARAM);
             } else {
                 String message = (String) permResp.get("failMessage");
                 if (UtilValidate.isEmpty(message)) {
@@ -955,7 +973,7 @@ public class ServiceDispatcher {
             }
         }
 
-        return context;
+        return origService.makeValid(context, ModelService.IN_PARAM);
     }
 
     // gets a value object from name/password pair

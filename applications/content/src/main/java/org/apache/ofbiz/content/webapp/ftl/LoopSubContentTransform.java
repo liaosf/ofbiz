@@ -88,9 +88,7 @@ public class LoopSubContentTransform implements TemplateTransformModel {
             idx = 0;
         }
         int i = idx;
-        if (UtilValidate.isEmpty(lst)) {
-            return false;
-        } else  if (i >= lst.size()) {
+        if (UtilValidate.isEmpty(lst) || i >= lst.size()) {
             return false;
         }
         GenericValue subContentDataResourceView = lst.get(i);
@@ -151,7 +149,7 @@ public class LoopSubContentTransform implements TemplateTransformModel {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Writer getWriter(final Writer out, Map args) {
+    public Writer getWriter(Writer out, @SuppressWarnings("rawtypes") Map args) {
         final StringBuilder buf = new StringBuilder();
         final Environment env = Environment.getCurrentEnvironment();
         final Map<String, Object> templateCtx = FreeMarkerWorker.getWrappedObject("context", env);

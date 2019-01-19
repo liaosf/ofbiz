@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.security.cert.X509Certificate;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -32,7 +31,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -230,13 +232,6 @@ public class RequestHandler {
         }
     }
 
-    public void doRequest(HttpServletRequest request, HttpServletResponse response, String requestUri) throws RequestHandlerException, RequestHandlerExceptionAllowExternalRequests {
-        HttpSession session = request.getSession();
-        Delegator delegator = (Delegator) request.getAttribute("delegator");
-        GenericValue userLogin = (GenericValue) session.getAttribute("userLogin");
-        doRequest(request, response, requestUri, userLogin, delegator);
-    }
-
     public void doRequest(HttpServletRequest request, HttpServletResponse response, String chain,
             GenericValue userLogin, Delegator delegator) throws RequestHandlerException, RequestHandlerExceptionAllowExternalRequests {
 
@@ -334,9 +329,8 @@ public class RequestHandler {
                 }
             }
             // Check if we SHOULD be secure and are not.
-            String forwardedProto = request.getHeader("X-Forwarded-Proto");
-            boolean isForwardedSecure = UtilValidate.isNotEmpty(forwardedProto) && "HTTPS".equals(forwardedProto.toUpperCase());
-            if ((!request.isSecure() && !isForwardedSecure) && requestMap.securityHttps) {
+            boolean forwardedHTTPS = "HTTPS".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
+            if (!request.isSecure() && !forwardedHTTPS && requestMap.securityHttps) {
                 // If the request method was POST then return an error to avoid problems with XSRF where the request may have come from another machine/program and had the same session ID but was not encrypted as it should have been (we used to let it pass to not lose data since it was too late to protect that data anyway)
                 if ("POST".equalsIgnoreCase(request.getMethod())) {
                     // we can't redirect with the body parameters, and for better security from XSRF, just return an error message
@@ -381,33 +375,7 @@ public class RequestHandler {
 
             // Check for HTTPS client (x.509) security
             if (request.isSecure() && requestMap.securityCert) {
-                X509Certificate[] clientCerts = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate"); // 2.2 spec
-                if (clientCerts == null) {
-                    clientCerts = (X509Certificate[]) request.getAttribute("javax.net.ssl.peer_certificates"); // 2.1 spec
-                }
-                if (clientCerts == null) {
-                    Debug.logWarning("Received no client certificates from browser", module);
-                }
-
-                // check if the client has a valid certificate (in our db store)
-                boolean foundTrustedCert = false;
-
-                if (clientCerts == null) {
-                    throw new RequestHandlerException(requestMissingErrorMessage);
-                } else {
-                    if (Debug.infoOn()) {
-                        for (int i = 0; i < clientCerts.length; i++) {
-                            Debug.logInfo(clientCerts[i].getSubjectX500Principal().getName(), module);
-                        }
-                    }
-
-                    // check if this is a trusted cert
-                    if (SSLUtil.isClientTrusted(clientCerts, null)) {
-                        foundTrustedCert = true;
-                    }
-                }
-
-                if (!foundTrustedCert) {
+                if (!checkCertificates(request, certs -> SSLUtil.isClientTrusted(certs, null))) {
                     Debug.logWarning(requestMissingErrorMessage, module);
                     throw new RequestHandlerException(requestMissingErrorMessage);
                 }
@@ -415,8 +383,9 @@ public class RequestHandler {
 
             // If its the first visit run the first visit events.
             if (this.trackVisit(request) && session.getAttribute("_FIRST_VISIT_EVENTS_") == null) {
-                if (Debug.infoOn())
+                if (Debug.infoOn()) {
                     Debug.logInfo("This is the first request in this visit." + showSessionId(request), module);
+                }
                 session.setAttribute("_FIRST_VISIT_EVENTS_", "complete");
                 for (ConfigXMLReader.Event event: ccfg.getFirstVisitEventList().values()) {
                     try {
@@ -695,6 +664,13 @@ public class RequestHandler {
             if ("url".equals(nextRequestResponse.type)) {
                 if (Debug.verboseOn()) Debug.logVerbose("[RequestHandler.doRequest]: Response is a URL redirect." + showSessionId(request), module);
                 callRedirect(nextRequestResponse.value, response, request, ccfg.getStatusCodeString());
+            } else if ("url-redirect".equals(nextRequestResponse.type)) {
+                // check for a cross-application redirect
+                if (Debug.verboseOn())
+                    Debug.logVerbose("[RequestHandler.doRequest]: Response is a URL redirect with redirect parameters."
+                            + showSessionId(request), module);
+                callRedirect(nextRequestResponse.value + this.makeQueryString(request, nextRequestResponse), response,
+                        request, ccfg.getStatusCodeString());
             } else if ("cross-redirect".equals(nextRequestResponse.type)) {
                 // check for a cross-application redirect
                 if (Debug.verboseOn()) Debug.logVerbose("[RequestHandler.doRequest]: Response is a Cross-Application redirect." + showSessionId(request), module);
@@ -1009,58 +985,16 @@ public class RequestHandler {
 
         if (Debug.verboseOn()) Debug.logVerbose("The ContentType for the " + view + " view is: " + contentType, module);
 
+        //Cache Headers
         boolean viewNoCache = viewMap.noCache;
         if (viewNoCache) {
            UtilHttp.setResponseBrowserProxyNoCache(resp);
            if (Debug.verboseOn()) Debug.logVerbose("Sending no-cache headers for view [" + nextPage + "]", module);
         }
         
-        // Security headers vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-        // See https://cwiki.apache.org/confluence/display/OFBIZ/How+to+Secure+HTTP+Headers
-        String xFrameOption = viewMap.xFrameOption;
-        // default to sameorigin
-        if (UtilValidate.isNotEmpty(xFrameOption)) {
-            if(!"none".equals(xFrameOption)) {
-                resp.addHeader("x-frame-options", xFrameOption);
-            }
-        } else {
-            resp.addHeader("x-frame-options", "sameorigin");
-        }
-
-        String strictTransportSecurity = viewMap.strictTransportSecurity;
-        // default to "max-age=31536000; includeSubDomains" 31536000 secs = 1 year
-        if (UtilValidate.isNotEmpty(strictTransportSecurity)) {
-            if (!"none".equals(strictTransportSecurity)) {
-                resp.addHeader("strict-transport-security", strictTransportSecurity);
-            }
-        } else {
-            if (EntityUtilProperties.getPropertyAsBoolean("requestHandler", "strict-transport-security", true)) { // FIXME later pass req.getAttribute("delegator") as last argument
-                resp.addHeader("strict-transport-security", "max-age=31536000; includeSubDomains");
-            }
-        }
+        //Security Headers
+        UtilHttp.setResponseBrowserDefaultSecurityHeaders(resp, viewMap);
         
-        //The only x-content-type-options defined value, "nosniff", prevents Internet Explorer from MIME-sniffing a response away from the declared content-type. 
-        // This also applies to Google Chrome, when downloading extensions.
-        resp.addHeader("x-content-type-options", "nosniff");
-        
-        // This header enables the Cross-site scripting (XSS) filter built into most recent web browsers. 
-        // It's usually enabled by default anyway, so the role of this header is to re-enable the filter for this particular website if it was disabled by the user. 
-        // This header is supported in IE 8+, and in Chrome (not sure which versions). The anti-XSS filter was added in Chrome 4. Its unknown if that version honored this header.
-        // FireFox has still an open bug entry and "offers" only the noscript plugin
-        // https://wiki.mozilla.org/Security/Features/XSS_Filter 
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=528661
-        resp.addHeader("X-XSS-Protection","1; mode=block"); 
-        
-        resp.setHeader("Referrer-Policy", "no-referrer-when-downgrade"); // This is the default (in Firefox at least)
-        
-        //resp.setHeader("Content-Security-Policy", "default-src 'self'");
-        //resp.setHeader("Content-Security-Policy-Report-Only", "default-src 'self'; report-uri webtools/control/ContentSecurityPolicyReporter");
-        resp.setHeader("Content-Security-Policy-Report-Only", "default-src 'self'");
-        
-        // TODO in custom project. Public-Key-Pins-Report-Only is interesting but can't be used OOTB because of demos (the letsencrypt certificate is renewed every 3 months)
-        
-        // Security headers ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
         try {
             if (Debug.verboseOn()) Debug.logVerbose("Rendering view [" + nextPage + "] of type [" + viewMap.type + "]", module);
             ViewHandler vh = viewFactory.getViewHandler(viewMap.type);
@@ -1266,38 +1200,47 @@ public class RequestHandler {
         return rh.makeLink(request, response, url, fullPath, secure, encode);
     }
 
-    public void runAfterLoginEvents(HttpServletRequest request, HttpServletResponse response) {
+    @FunctionalInterface
+    private interface EventCollectionProducer {
+        Collection<ConfigXMLReader.Event> get() throws WebAppConfigurationException;
+    }
+
+    private void runEvents(HttpServletRequest req, HttpServletResponse res, 
+            EventCollectionProducer prod, String trigger) {
         try {
-            for (ConfigXMLReader.Event event: getControllerConfig().getAfterLoginEventList().values()) {
-                try {
-                    String returnString = this.runEvent(request, response, event, null, "after-login");
-                    if (returnString != null && !"success".equalsIgnoreCase(returnString)) {
-                        throw new EventHandlerException("Pre-Processor event did not return 'success'.");
-                    }
-                } catch (EventHandlerException e) {
-                    Debug.logError(e, module);
+            for (ConfigXMLReader.Event event: prod.get()) {
+                String ret = runEvent(req, res, event, null, trigger);
+                if (ret != null && !"success".equalsIgnoreCase(ret)) {
+                    throw new EventHandlerException("Pre-Processor event did not return 'success'.");
                 }
             }
+        } catch (EventHandlerException e) {
+            Debug.logError(e, module);
         } catch (WebAppConfigurationException e) {
             Debug.logError(e, "Exception thrown while parsing controller.xml file: ", module);
         }
     }
 
-    public void runBeforeLogoutEvents(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            for (ConfigXMLReader.Event event: getControllerConfig().getBeforeLogoutEventList().values()) {
-                try {
-                    String returnString = this.runEvent(request, response, event, null, "before-logout");
-                    if (returnString != null && !"success".equalsIgnoreCase(returnString)) {
-                        throw new EventHandlerException("Pre-Processor event did not return 'success'.");
-                    }
-                } catch (EventHandlerException e) {
-                    Debug.logError(e, module);
-                }
-            }
-        } catch (WebAppConfigurationException e) {
-            Debug.logError(e, "Exception thrown while parsing controller.xml file: ", module);
-        }
+    /**
+     * Run all the "after-login" Web events defined in the controller configuration.
+     *
+     * @param req the request to run the events with
+     * @param resp the response to run the events with
+     */
+    public void runAfterLoginEvents(HttpServletRequest req, HttpServletResponse resp) {
+        EventCollectionProducer prod = () -> getControllerConfig().getAfterLoginEventList().values();
+        runEvents(req, resp, prod, "after-login");
+    }
+
+    /**
+     * Run all the "before-logout" Web events defined in the controller configuration.
+     *
+     * @param req the request to run the events with
+     * @param resp the response to run the events with
+     */
+    public void runBeforeLogoutEvents(HttpServletRequest req, HttpServletResponse resp) {
+        EventCollectionProducer prod = () -> getControllerConfig().getBeforeLogoutEventList().values();
+        runEvents(req, resp, prod, "before-logout");
     }
 
     public boolean trackStats(HttpServletRequest request) {
@@ -1355,5 +1298,32 @@ public class RequestHandler {
             return " sessionId=" + UtilHttp.getSessionId(request); 
         }
         return " Hidden sessionId by default.";
+    }
+
+    /**
+     * Checks that the request contains some valid certificates.
+     *
+     * @param request the request to verify
+     * @param validator the predicate applied the certificates found
+     * @return true if the request contains some valid certificates, otherwise false.
+     */
+    static boolean checkCertificates(HttpServletRequest request, Predicate<X509Certificate[]> validator) {
+        return Stream.of("javax.servlet.request.X509Certificate", // 2.2 spec
+                         "javax.net.ssl.peer_certificates")       // 2.1 spec
+                .map(request::getAttribute)
+                .filter(Objects::nonNull)
+                .map(X509Certificate[].class::cast)
+                .peek(certs -> {
+                    if (Debug.infoOn()) {
+                        for (X509Certificate cert : certs) {
+                            Debug.logInfo(cert.getSubjectX500Principal().getName(), module);
+                        }
+                    }
+                })
+                .map(validator::test)
+                .findFirst().orElseGet(() -> {
+                    Debug.logWarning("Received no client certificates from browser", module);
+                    return false;
+                });
     }
 }

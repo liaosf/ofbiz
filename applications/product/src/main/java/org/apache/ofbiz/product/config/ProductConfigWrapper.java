@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.ofbiz.base.util.Debug;
@@ -530,31 +531,25 @@ public class ProductConfigWrapper implements Serializable {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof ConfigItem)) {
-                return false;
-            }
-            ConfigItem ci = (ConfigItem)obj;
-            if (!configItem.getString("configItemId").equals(ci.getConfigItem().getString("configItemId"))) {
-                return false;
-            }
-            List<ConfigOption> opts = ci.getOptions();
-            if (options.size() != opts.size()) {
-                return false;
-            }
-            for (int i = 0; i < options.size(); i++) {
-                ConfigOption co = options.get(i);
-                if (!co.equals(opts.get(i))) {
-                    return false;
-                }
-            }
-            return true;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ConfigItem that = (ConfigItem) o;
+            return Objects.equals(getConfigItem(), that.getConfigItem()) &&
+                    Objects.equals(getConfigItemAssoc(), that.getConfigItemAssoc()) &&
+                    Objects.equals(getOptions(), that.getOptions());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getConfigItem(), getConfigItemAssoc(), getOptions());
         }
 
         @Override
         public String toString() {
             return configItem.getString("configItemId");
         }
+
     }
 
     public class ConfigOption implements java.io.Serializable {
@@ -753,10 +748,7 @@ public class ProductConfigWrapper implements Serializable {
 
         public boolean isDefault() {
             ConfigOption defaultConfigOption = parentConfigItem.getDefault();
-            if (this.equals(defaultConfigOption)) {
-                return true;
-            }
-            return false;
+            return this.equals(defaultConfigOption);
         }
 
         public boolean hasVirtualComponent () {
@@ -809,39 +801,25 @@ public class ProductConfigWrapper implements Serializable {
             return componentOptions;
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ConfigOption that = (ConfigOption) o;
+            return Objects.equals(availabilityDate, that.availabilityDate) &&
+                    Objects.equals(componentList, that.componentList) &&
+                    Objects.equals(getComponentOptions(), that.getComponentOptions()) &&
+                    Objects.equals(configOption, that.configOption);
+        }
 
         @Override
         public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + getOuterType().hashCode();
-            result = prime * result + ((componentList == null) ? 0 : componentList.hashCode());
-            result = prime * result + ((componentOptions == null) ? 0 : componentOptions.hashCode());
-            return result;
+            return Objects.hash(availabilityDate, componentList, getComponentOptions(), configOption);
         }
-
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof ConfigOption)) {
-                return false;
-            }
-            ConfigOption co = (ConfigOption)obj;
-            if (componentOptions != null && !componentOptions.equals(co.getComponentOptions())) {
-                return false;
-            }
-
-            return isSelected() == co.isSelected();
-        }
-
 
         @Override
         public String toString() {
             return configOption.getString("configItemId") + "/" + configOption.getString("configOptionId") + (isSelected()? "*": "");
-        }
-
-        private ProductConfigWrapper getOuterType() {
-            return ProductConfigWrapper.this;
         }
 
     }

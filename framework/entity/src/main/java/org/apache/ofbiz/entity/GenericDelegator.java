@@ -281,12 +281,9 @@ public class GenericDelegator implements Delegator {
     }
 
     protected Callable<Void> createHelperCallable(final String groupName) {
-        return new Callable<Void>() {
-            @Override
-            public Void call() {
-                initializeOneGenericHelper(groupName);
-                return null;
-            }
+        return () -> {
+            initializeOneGenericHelper(groupName);
+            return null;
         };
     }
 
@@ -312,11 +309,7 @@ public class GenericDelegator implements Delegator {
             return;
         }
 
-        Callable<EntityEcaHandler<?>> creator = new Callable<EntityEcaHandler<?>>() {
-            public EntityEcaHandler<?> call() {
-                return createEntityEcaHandler();
-            }
-        };
+        Callable<EntityEcaHandler<?>> creator = () -> createEntityEcaHandler();
         FutureTask<EntityEcaHandler<?>> futureTask = new FutureTask<>(creator);
         if (this.entityEcaHandler.compareAndSet(null, futureTask)) {
             // This needs to use BATCH, as the service engine might add it's own items into a thread pool.
@@ -578,24 +571,6 @@ public class GenericDelegator implements Delegator {
             throw new IllegalArgumentException("ModelFieldTypeReader not found for entity " + entity.getEntityName() + " with helper name " + helperName);
         }
         return modelFieldTypeReader;
-    }
-
-    /* (non-Javadoc)
-     * @see org.apache.ofbiz.entity.Delegator#getEntityFieldTypeNames(org.apache.ofbiz.entity.model.ModelEntity)
-     */
-    @Override
-    public Collection<String> getEntityFieldTypeNames(ModelEntity entity) throws GenericEntityException {
-        String helperName = getEntityHelperName(entity);
-
-        if (UtilValidate.isEmpty(helperName)) {
-            return null;
-        }
-        ModelFieldTypeReader modelFieldTypeReader = ModelFieldTypeReader.getModelFieldTypeReader(helperName);
-
-        if (modelFieldTypeReader == null) {
-            throw new GenericEntityException("ModelFieldTypeReader not found for entity " + entity.getEntityName() + " with helper name " + helperName);
-        }
-        return modelFieldTypeReader.getFieldTypeNames();
     }
 
     /* (non-Javadoc)
@@ -2617,11 +2592,7 @@ public class GenericDelegator implements Delegator {
             return;
         }
 
-        Callable<DistributedCacheClear> creator = new Callable<DistributedCacheClear>() {
-            public DistributedCacheClear call() {
-                return createDistributedCacheClear();
-            }
-        };
+        Callable<DistributedCacheClear> creator = () -> createDistributedCacheClear();
         FutureTask<DistributedCacheClear> futureTask = new FutureTask<>(creator);
         if (distributedCacheClear.compareAndSet(null, futureTask)) {
             ExecutionPool.GLOBAL_BATCH.submit(futureTask);

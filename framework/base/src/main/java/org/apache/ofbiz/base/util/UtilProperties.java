@@ -146,7 +146,7 @@ public final class UtilProperties implements Serializable {
             return defaultNumber;
         }
         try {
-            return (Number)(ObjectType.simpleTypeConvert(str, type, null, null));
+            return (Number)(ObjectType.simpleTypeOrObjectConvert(str, type, null, null));
         } catch (GeneralException e) {
             Debug.logWarning("Error converting String \"" + str + "\" to " + type + "; using defaultNumber " + defaultNumber + ".", module);
         }
@@ -370,11 +370,7 @@ public final class UtilProperties implements Serializable {
      */
     public static boolean propertyValueEquals(URL url, String name, String compareString) {
         String value = getPropertyValue(url, name);
-
-        if (value == null) {
-            return false;
-        }
-        return value.trim().equals(compareString);
+        return !(value == null) && value.trim().equals(compareString);
     }
 
     /** Compares Ignoring Case the specified property to the compareString, returns true if they are the same, false otherwise
@@ -385,11 +381,7 @@ public final class UtilProperties implements Serializable {
      */
     public static boolean propertyValueEqualsIgnoreCase(URL url, String name, String compareString) {
         String value = getPropertyValue(url, name);
-
-        if (value == null) {
-            return false;
-        }
-        return value.trim().equalsIgnoreCase(compareString);
+        return !(value == null) && value.trim().equalsIgnoreCase(compareString);
     }
 
     /** Returns the value of the specified property name from the specified resource/properties file.
@@ -566,8 +558,6 @@ public final class UtilProperties implements Serializable {
                      +"# The comments have been removed, you may still find them on the OFBiz repository... \n"
                      +"#");
              }
-
-             propFile.close();
          } catch (FileNotFoundException e) {
              Debug.logInfo(e, "Unable to located the resource file.", module);
          } catch (IOException e) {

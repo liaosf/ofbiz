@@ -33,8 +33,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
-
 import javax.transaction.Transaction;
 
 import org.apache.commons.lang.StringUtils;
@@ -451,7 +449,7 @@ public class OrderServices {
                     if (ServiceUtil.isError(getNextOrderIdResult)) {
                         String errMsg = UtilProperties.getMessage(resource_error,
                                 "OrderErrorGettingNextOrderIdWhileCreatingOrder", locale);
-                        return ServiceUtil.returnError(ServiceUtil.getErrorMessage(getNextOrderIdResult));
+                        return ServiceUtil.returnError(errMsg);
                     }
                     orderId = (String) getNextOrderIdResult.get("orderId");
                 } catch (GenericServiceException e) {
@@ -3693,7 +3691,7 @@ public class OrderServices {
             String quantityStr = itemQtyMap.get(key);
             BigDecimal groupQty = BigDecimal.ZERO;
             try {
-                groupQty = (BigDecimal) ObjectType.simpleTypeConvert(quantityStr, "BigDecimal", null, locale);
+                groupQty = (BigDecimal) ObjectType.simpleTypeOrObjectConvert(quantityStr, "BigDecimal", null, locale);
             } catch (GeneralException e) {
                 Debug.logError(e, module);
                 return ServiceUtil.returnError(e.getMessage());
@@ -3757,7 +3755,7 @@ public class OrderServices {
                     if (UtilValidate.isNotEmpty(priceStr)) {
                         BigDecimal price = null;
                         try {
-                            price = (BigDecimal) ObjectType.simpleTypeConvert(priceStr, "BigDecimal", null, locale);
+                            price = (BigDecimal) ObjectType.simpleTypeOrObjectConvert(priceStr, "BigDecimal", null, locale);
                         } catch (GeneralException e) {
                             Debug.logError(e, module);
                             return ServiceUtil.returnError(e.getMessage());
@@ -3868,16 +3866,15 @@ public class OrderServices {
             String quantityStr = itemQtyMap.get(key);
             BigDecimal groupQty = BigDecimal.ZERO;
             try {
-                groupQty = (BigDecimal) ObjectType.simpleTypeConvert(quantityStr, "BigDecimal", null, locale);
+                groupQty = (BigDecimal) ObjectType.simpleTypeOrObjectConvert(quantityStr, "BigDecimal", null, locale);
             } catch (GeneralException e) {
                 Debug.logError(e, module);
                 return ServiceUtil.returnError(e.getMessage());
             }
 
             String[] itemInfo = key.split(":");
-            int groupIdx = -1;
             try {
-                groupIdx = Integer.parseInt(itemInfo[1]);
+                Integer.parseInt(itemInfo[1]);
             } catch (NumberFormatException e) {
                 Debug.logError(e, module);
                 return ServiceUtil.returnError(e.getMessage());
@@ -5864,7 +5861,8 @@ public class OrderServices {
      * @return
      * @throws GenericEntityException
      */
-    public static Map addOrderItemShipGroupAssoc(DispatchContext dctx, Map<String, Object> context) throws GenericEntityException {
+    public static Map<String, Object> addOrderItemShipGroupAssoc(DispatchContext dctx, Map<String, Object> context)
+            throws GenericEntityException {
         Delegator delegator = dctx.getDelegator();
         LocalDispatcher dispatcher = dctx.getDispatcher();
         Locale locale = (Locale) context.get("locale" );
@@ -5950,7 +5948,8 @@ public class OrderServices {
      * @return
      * @throws GeneralException
      */
-    public static Map updateOrderItemShipGroupAssoc(DispatchContext dctx, Map context) throws GeneralException{
+    public static Map<String, Object> updateOrderItemShipGroupAssoc(DispatchContext dctx, Map<String, Object> context)
+            throws GeneralException{
         Map<String, Object> result = ServiceUtil.returnSuccess();
         String message = null;
         Delegator delegator = dctx.getDelegator();
@@ -6253,25 +6252,22 @@ public class OrderServices {
         final EntityCondition cond = EntityCondition.makeCondition(orderCondList);
         List<String> orderIds;
         try {
-            orderIds = TransactionUtil.doNewTransaction(new Callable<List<String>>() {
-                @Override
-                public List<String> call() throws Exception {
-                    List<String> orderIds = new LinkedList<>();
+            orderIds = TransactionUtil.doNewTransaction(() -> {
+                List<String> oids = new LinkedList<>();
 
-                    EntityQuery eq = EntityQuery.use(delegator)
-                            .select("orderId")
-                            .from("OrderHeader")
-                            .where(cond)
-                            .orderBy("entryDate ASC");
+                EntityQuery eq = EntityQuery.use(delegator)
+                        .select("orderId")
+                        .from("OrderHeader")
+                        .where(cond)
+                        .orderBy("entryDate ASC");
 
-                    try (EntityListIterator eli = eq.queryIterator()) {
-                        GenericValue orderHeader;
-                        while ((orderHeader = eli.next()) != null) {
-                            orderIds.add(orderHeader.getString("orderId"));
-                        }
+                try (EntityListIterator eli = eq.queryIterator()) {
+                    GenericValue orderHeader;
+                    while ((orderHeader = eli.next()) != null) {
+                        oids.add(orderHeader.getString("orderId"));
                     }
-                    return orderIds;
                 }
+                return oids;
             }, "getSalesOrderIds", 0, true);
         } catch (GenericEntityException e) {
             Debug.logError(e, module);

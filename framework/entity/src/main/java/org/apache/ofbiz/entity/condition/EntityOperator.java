@@ -19,13 +19,15 @@
 
 package org.apache.ofbiz.entity.condition;
 
+import static org.apache.ofbiz.entity.condition.EntityConditionUtils.addValue;
+
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.ofbiz.base.util.UtilGenerics;
 import org.apache.ofbiz.entity.Delegator;
@@ -40,7 +42,7 @@ import org.apache.ofbiz.entity.model.ModelField;
  *
  */
 @SuppressWarnings("serial")
-public abstract class EntityOperator<L, R, T> extends EntityConditionBase {
+public abstract class EntityOperator<L, R, T> implements Serializable {
 
     public static final int ID_EQUALS = 1;
     public static final int ID_NOT_EQUAL = 2;
@@ -57,7 +59,6 @@ public abstract class EntityOperator<L, R, T> extends EntityConditionBase {
     public static final int ID_NOT_IN = 13;
     public static final int ID_NOT_LIKE = 14;
 
-    private static final AtomicInteger dynamicId = new AtomicInteger();
     private static HashMap<String, EntityOperator<?,?,?>> registry = new HashMap<>();
 
     private static <L,R,T> void registerCase(String name, EntityOperator<L,R,T> operator) {
@@ -89,10 +90,6 @@ public abstract class EntityOperator<L, R, T> extends EntityConditionBase {
             throw new IllegalArgumentException(name + " is not a join operator");
         }
         return UtilGenerics.cast(operator);
-    }
-
-    public static int requestId() {
-        return dynamicId.get();
     }
 
     public static final EntityComparisonOperator<?,?> EQUALS = new ComparableEntityComparisonOperator<Object>(ID_EQUALS, "=") {
@@ -296,7 +293,6 @@ public abstract class EntityOperator<L, R, T> extends EntityConditionBase {
 
     public abstract void addSqlValue(StringBuilder sql, ModelEntity entity, List<EntityConditionParam> entityConditionParams, boolean compat, L lhs, R rhs, Datasource datasourceInfo);
     public abstract EntityCondition freeze(L lhs, R rhs);
-    public abstract void visit(EntityConditionVisitor visitor, L lhs, R rhs);
 
     public static final Comparable<?> WILDCARD = new Comparable<Object>() {
         public int compareTo(Object obj) {

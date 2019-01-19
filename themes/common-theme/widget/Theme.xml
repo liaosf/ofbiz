@@ -67,7 +67,7 @@ under the License.
         <property name="VT_HDR_JAVASCRIPT['add']" value="/common/js/jquery/plugins/mask/jquery.mask-1.14.13.min.js"/>
         <property name="VT_HDR_JAVASCRIPT['add']" value="/common/js/jquery/plugins/jeditable/jquery.jeditable-1.7.3.js"/>
         <property name="VT_HDR_JAVASCRIPT['add']" value="/common/js/jquery/plugins/validate/jquery.validate.min.js"/>
-        <property name="VT_HDR_JAVASCRIPT['add']" value="/common/js/plugins/OpenLayers-2.13.1-modified-for-CSP-.js"/>
+        <property name="VT_HDR_JAVASCRIPT['add']" value="/common/js/plugins/OpenLayers-5.3.0.js"/>
         <property name="VT_HDR_JAVASCRIPT['add']" value="/common/js/jquery/plugins/elrte-1.3/js/elrte.min.js"/>
         <property name="VT_HDR_JAVASCRIPT['add']" value="/common/js/util/OfbizUtil.js"/>
         <property name="VT_HDR_JAVASCRIPT['add']" value="/common/js/util/fieldlookup.js"/>
@@ -148,6 +148,7 @@ under the License.
             <screen name="ajaxAutocompleteOptions"/>
             <screen name="FoError"/>
             <screen name="login"/>
+            <screen name="impersonated"/>
             <screen name="ajaxNotLoggedIn"/>
             <screen name="requirePasswordChange"/>
             <screen name="forgotPassword_step1"/>
@@ -165,4 +166,12 @@ under the License.
             <screen name="ShowHelp" location="component://common-theme/widget/HelpScreens.xml"/>
         </generic-screen>
     </common-screens>
+    <common-menus><!--list all common menu to each application that each theme can be surcharge or not and use the menu present on common theme-->
+        <root-decorator default-location="component://common-theme/widget/CommonMenus.xml">
+            <menu name="CommonAppBarMenu"/>
+            <menu name="CommonTabBarMenu"/>
+            <menu name="CommonButtonBarMenu"/>
+            <menu name="CommonInlineBarMenu"/>
+        </root-decorator>
+    </common-menus>
 </theme>

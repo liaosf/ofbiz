@@ -40,7 +40,6 @@ import org.apache.ofbiz.entity.Delegator;
 import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.condition.EntityCondition;
-import org.apache.ofbiz.entity.condition.EntityExpr;
 import org.apache.ofbiz.entity.condition.EntityOperator;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.entity.util.EntityUtil;
@@ -519,25 +518,20 @@ public class PriceServices {
                 if (UtilValidate.isNotEmpty(result)) {
                     Map<String, Object> convertPriceMap = new HashMap<String, Object>();
                     for (Map.Entry<String, Object> entry : result.entrySet()) {
-                        BigDecimal tempPrice = BigDecimal.ZERO;
+                        BigDecimal tempPrice;
                         switch (entry.getKey()) {
                         case "basePrice":
-                            tempPrice = (BigDecimal) entry.getValue();
                         case "price":
-                            tempPrice = (BigDecimal) entry.getValue();
                         case "defaultPrice":
-                            tempPrice = (BigDecimal) entry.getValue();
                         case "competitivePrice":
-                            tempPrice = (BigDecimal) entry.getValue();
                         case "averageCost":
-                            tempPrice = (BigDecimal) entry.getValue();
                         case "promoPrice":
-                            tempPrice = (BigDecimal) entry.getValue();
                         case "specialPromoPrice":
-                            tempPrice = (BigDecimal) entry.getValue();
                         case "listPrice":
                             tempPrice = (BigDecimal) entry.getValue();
-
+                            break;
+                        default:
+                            tempPrice = BigDecimal.ZERO;
                         }
                         
                         if (tempPrice != null && tempPrice != BigDecimal.ZERO) {
@@ -1230,12 +1224,11 @@ public class PriceServices {
         if (UtilValidate.isNotEmpty(agreementId)) {
             //TODO Search before if agreement is associate to SupplierProduct.
             //confirm that agreement is price application on purchase type and contains a value for the product
-            EntityCondition cond = EntityCondition.makeCondition(
-                    UtilMisc.toList(
-                            EntityExpr.makeCondition("agreementId", agreementId),
-                            EntityExpr.makeCondition("agreementItemTypeId", "AGREEMENT_PRICING_PR"),
-                            EntityExpr.makeCondition("agreementTypeId", "PURCHASE_AGREEMENT"),
-                            EntityExpr.makeCondition("productId", productId)));
+            EntityCondition cond = EntityCondition.makeConditionMap(
+                    "agreementId", agreementId,
+                    "agreementItemTypeId", "AGREEMENT_PRICING_PR",
+                    "agreementTypeId", "PURCHASE_AGREEMENT",
+                    "productId", productId);
             try {
                 List<GenericValue> agreementPrices = delegator.findList("AgreementItemAndProductAppl", cond, UtilMisc.toSet("price", "currencyUomId"), null, null, true);
                 if (UtilValidate.isNotEmpty(agreementPrices)) {

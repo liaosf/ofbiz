@@ -1929,10 +1929,7 @@ public class ShoppingCart implements Iterable<ShoppingCartItem>, Serializable {
         } catch (GenericEntityException e) {
             Debug.logInfo(e, "Problems getting PaymentMethodType", module);
         }
-        if (paymentMethodType == null) {
-            return false;
-        }
-        return true;
+        return paymentMethodType != null;
     }
 
     public GenericValue getBillingAddress() {
@@ -1965,10 +1962,7 @@ public class ShoppingCart implements Iterable<ShoppingCartItem>, Serializable {
         try {
             GenericValue giftCertSettings = getGiftCertSettingFromStore(delegator);
             if (giftCertSettings != null) {
-                if ("Y".equals(giftCertSettings.getString("requirePinCode"))) {
-                    return true;
-                }
-                return false;
+                return "Y".equals(giftCertSettings.getString("requirePinCode"));
             }
             Debug.logWarning("No product store gift certificate settings found for store [" + getProductStoreId() + "]",
                     module);
@@ -1988,10 +1982,7 @@ public class ShoppingCart implements Iterable<ShoppingCartItem>, Serializable {
         try {
             GenericValue giftCertSettings = getGiftCertSettingFromStore(delegator);
             if (giftCertSettings != null) {
-                if ("Y".equals(giftCertSettings.getString("validateGCFinAcct"))) {
-                    return true;
-                }
-                return false;
+                return "Y".equals(giftCertSettings.getString("validateGCFinAcct"));
             }
             Debug.logWarning("No product store gift certificate settings found for store [" + getProductStoreId() + "]",
                     module);
@@ -2239,16 +2230,18 @@ public class ShoppingCart implements Iterable<ShoppingCartItem>, Serializable {
     }
 
     public void cleanUpShipGroups() {
-        for (CartShipInfo csi : this.shipInfo) {
-            Iterator<ShoppingCartItem> si = csi.shipItemInfo.keySet().iterator();
+        Iterator<CartShipInfo> csi = this.shipInfo.iterator();
+        while (csi.hasNext()) {
+            CartShipInfo info = csi.next();
+            Iterator<ShoppingCartItem> si = info.shipItemInfo.keySet().iterator();
             while (si.hasNext()) {
                 ShoppingCartItem item = si.next();
                 if (item.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
                     si.remove();
                 }
             }
-            if (csi.shipItemInfo.size() == 0) {
-                this.shipInfo.remove(csi);
+            if (info.shipItemInfo.size() == 0) {
+                csi.remove();
             }
         }
     }
@@ -4023,7 +4016,7 @@ public class ShoppingCart implements Iterable<ShoppingCartItem>, Serializable {
             if (shipGroupSeqId != null) {
                 groups.addAll(csi.makeItemShipGroupAndAssoc(dispatcher, this.getDelegator(), this, shipGroupSeqId));
             } else {
-                groups.addAll(csi.makeItemShipGroupAndAssoc(dispatcher, this.getDelegator(), this, UtilFormatOut.formatPaddedNumber(seqId, 5), true));
+                groups.addAll(csi.makeItemShipGroupAndAssoc(dispatcher, this.getDelegator(), this, UtilFormatOut.formatPaddedNumber(seqId, 5)));
             }
             seqId++;
         }
@@ -4747,11 +4740,12 @@ public class ShoppingCart implements Iterable<ShoppingCartItem>, Serializable {
             }
         }
 
-        public List<GenericValue> makeItemShipGroupAndAssoc(LocalDispatcher dispatcher, Delegator delegator, ShoppingCart cart, String shipGroupSeqId) {
-            return makeItemShipGroupAndAssoc(dispatcher, delegator, cart, shipGroupSeqId, false);
+        @Deprecated
+        public List<GenericValue> makeItemShipGroupAndAssoc(LocalDispatcher dispatcher, Delegator delegator, ShoppingCart cart, String shipGroupSeqId, boolean newShipGroup) {
+            return makeItemShipGroupAndAssoc(dispatcher, delegator, cart, shipGroupSeqId);
         }
 
-        public List<GenericValue> makeItemShipGroupAndAssoc(LocalDispatcher dispatcher, Delegator delegator, ShoppingCart cart, String shipGroupSeqId, boolean newShipGroup) {
+        public List<GenericValue> makeItemShipGroupAndAssoc(LocalDispatcher dispatcher, Delegator delegator, ShoppingCart cart, String shipGroupSeqId) {
             List<GenericValue> values = new LinkedList<>();
 
             // create order contact mech for shipping address
